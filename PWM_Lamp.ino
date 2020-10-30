@@ -3,8 +3,8 @@
 
 #include "index_html.h"  // In dieser Datei befindet sich die Steuerungs Webseite
 
-const char* ssid = "yawlan53f";      // WLAN-Name,
-const char* password = "pdp$%1130,.dpw500"; // WLAN-Passwort
+const char* ssid = "your_wifi";      // WLAN-Name,
+const char* password = "add_your_wifi_password_here"; // WLAN-Passwort
 #define RelaisPin 4  // Relais
 #define RelaisPin2 5
 #define PWM_SCALE 1023
