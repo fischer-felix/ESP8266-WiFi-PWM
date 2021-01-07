@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <EEPROM.h>
 #include "index_html.h" // This file contains the webpage to control the esp
 
 const char* ssid = "your_wifi_ssid"; // WiFi-name
@@ -7,24 +8,42 @@ const char* password = "your_wifi_password"; // WiFi-password
 
 #define PWMPin 4    //pin1 for PWM
 #define PWMPin2 5   //pin2 for PWM
+
 #define PWM_SCALE 1023
+#define EEPROM_SIZE 2
+#define switchpin1 13
+#define switchpin2 2
+
 
 int ch1 = 100;
 int ch2 = 100;
+volatile int button1;
+volatile int button2;
+unsigned long update_millis = 0;
 
 ESP8266WebServer server(80);    // set server port here
 
 
 void setup()
 {
+  Serial.begin(115200); // initialize serial port
+  Serial.println("");    // new line
+  
+  EEPROM.begin(EEPROM_SIZE);
+  ch1 = EEPROM.read(0);
+  ch2 = EEPROM.read(1);
+  Serial.println("ch1:" + String(ch1) + "ch2:" + String(ch2));
   pinMode(PWMPin, OUTPUT);
   pinMode(PWMPin2, OUTPUT);
-  analogWrite(PWMPin, ch1);
-  analogWrite(PWMPin2, ch2);
+  pinMode(switchpin1, INPUT_PULLUP);
+  pinMode(switchpin2, INPUT_PULLUP);
+  analogWrite(PWMPin, PWM_SCALE*ch1/100);
+  analogWrite(PWMPin2, PWM_SCALE*ch2/100);
+  attachInterrupt(digitalPinToInterrupt(switchpin1), button1pressISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(switchpin2), button2pressISR, FALLING);
 
-  Serial.begin(115200); // initialize serial port
-  Serial.println("");	  // new line
-  Serial.println("Warte auf Verbindung");
+
+  Serial.println("Waiting for connection");
 
   //WiFi.mode(WIFI_AP);      // access point mode
   //WiFi.softAP("astral", "12345678");  // name of the WiFi network and password
@@ -43,7 +62,7 @@ void setup()
     Serial.print(".");
     }
     Serial.println("");
-    Serial.print("Verbunden mit ");
+    Serial.print("Connected to");
     Serial.println(ssid);
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
@@ -54,27 +73,78 @@ void setup()
   server.onNotFound ( handleNotFound );
 
   server.begin();  			// start server
-  Serial.println("HTTP Server gestartet");
+  Serial.println("HTTP Server started");
 }
 
-void loop()
-{
+void loop() {
+  
   server.handleClient();
+
+  if (button1) {
+    stepchannel(&ch1, PWMPin);
+    button1 = 0;
+  }
+  if (button2) {
+    stepchannel(&ch2, PWMPin2);
+    button2= 0;
+  }
+
+  if (0 < update_millis && update_millis < millis()){
+    update_millis = 0;
+    Serial.println("saving values");
+    EEPROM.write(0, ch1);
+    EEPROM.write(1, ch2);
+    EEPROM.commit();
+  }
 }
 
+  
 void handleChannel(const char *ch, int *valp, int pin)
 {
   if (server.arg(ch) == "")
-    return;
+  return;
   const char *arg = server.arg(ch).c_str();
   int val = atoi(arg);
   // c++11: int val = stoi(server.arg(ch));
   if (0 <= val && val <= 100) {
     Serial.println("Channel " + String(ch) + ": val=" + String(val) + ", pin=" + String(pin));
-    *valp = val;
-    analogWrite(pin, PWM_SCALE * val / 100);
+    setchannel(valp, pin, val);
   }
   return;
+}
+
+void setchannel (int *valp, int pin, int val) {
+  *valp = val;
+    analogWrite(pin, PWM_SCALE * val / 100);
+    update_millis = millis() + 1000;
+}
+
+void stepchannel (int *valp, int pin) {
+ 
+  int val = *valp;
+
+  if (val < 12){
+    val = 25;
+  } else if (val < 25+12) {
+    val = 50;
+  } else if (val < 50+12) {
+    val = 75;
+  } else if (val < 75+12) {
+    val = 100;
+  } else {
+    val = 0;
+  }
+  setchannel(valp, pin, val);
+}
+
+ICACHE_RAM_ATTR
+void  button1pressISR() {
+  button1 = 1;
+}
+
+ICACHE_RAM_ATTR
+void  button2pressISR() {
+  button2 = 1;
 }
 
 void Ereignis_Index()    // executed if "http://<ip address>/" is accessed

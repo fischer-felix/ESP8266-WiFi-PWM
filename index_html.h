@@ -4,55 +4,113 @@ const char indexHTML[] PROGMEM = R"=====(
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-.slidecontainer {
-  width: 100%;
-  margin: 10px;
+html {
+ /* height: 100%;*/
+  font-family: 'Work Sans', sans-serif;
+  text-align: center;
 }
 
-.slider {
-  -webkit-appearance: none;
-  width: 80%;
-  height: 25px;
-  background: #d3d3d3;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
+html h1 {
+  color: #eeeeee;
+  font-weight: 5000;
+  margin-bottom: 35px;
+  /*text-align: left;*/
 }
 
-.slider:hover {
-  opacity: 1;
+html h3 {
+  color: #c3c3c3;
+  font-weight: 700;
+  margin-left: 14%;
+  margin-right: 14%;
+  /*display: inline;*/
 }
 
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 25px;
-  height: 25px;
-  background: #4CAF50;
-  cursor: pointer;
+html h4 {
+  color: #999;
+  font-weight: 500;
 }
 
-.slider::-moz-range-thumb {
-  width: 25px;
-  height: 25px;
-  background: #4CAF50;
-  cursor: pointer;
+/*Chrome*/
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    input[type='range'] {
+      overflow: hidden;
+      width: 75%;
+      border-radius: 14px;
+      outline: none;
+      -webkit-appearance: none;
+      background-color: #1b3756;
+    }
+    
+    input[type='range']::-webkit-slider-runnable-track {
+      height: 40px;
+      -webkit-appearance: none;
+      color: #052aff;
+    }
+    
+    input[type='range']::-webkit-slider-thumb {
+      width: 0px;
+      -webkit-appearance: none;
+      height: 40px;
+      border-radius: 50%;
+      cursor: ew-resize;
+      background: #1a73e8;
+      box-shadow: -800px 0 0 800px #1a73e8;
+    }
+
 }
+/** FF*/
+input[type=range]{
+    /* fix for FF unable to apply focus style bug  */
+    border: 0px #242424; 
+
+    /*required for proper track sizing in FF*/
+    width: 75%;
+    height: 40px;
+}
+input[type=range]::-moz-range-thumb {
+  background-color: #1a73e8;
+  height: 0px;
+  width: 0px;
+  border: none;
+}
+input[type="range"]::-moz-range-progress {
+  background-color: #1a73e8; 
+  height: 40px;
+}
+input[type="range"]::-moz-range-track {  
+  background-color: #1b3756;
+  border: none;
+  height: 40px;
+  width: 75%;
+  border-radius: 14px;
+}
+
 </style>
 </head>
-<body>
+<body style="background-color: #242424">
 
+<h1> Lamp Control </h1>
+
+<div style="clear: both">
+<h3 style="float: left"> TOP </h3> 
+<h3 style="float: right"> <span id="value1"></span> </h3>
+</div>
 
 <div class="slidecontainer">
   <input type="range" min="0" max="100" value="50" class="slider" id="slider1">
-  <span id="value1"></span>
+</div>
+
+<br>
+
+<div style="clear: both">
+<h3 style="float: left"> BOTTOM </h3>
+<h3 style="float: right"> <span id="value2"></span> </h3>
 </div>
 
 <div class="slidecontainer">
   <input type="range" min="0" max="100" value="50" class="slider" id="slider2">
-  <span id="value2"></span>
 </div>
+
 
 <script>
 var xhr = new XMLHttpRequest();
