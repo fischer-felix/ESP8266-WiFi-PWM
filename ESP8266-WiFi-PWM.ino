@@ -37,11 +37,11 @@ void setup()
   pinMode(PWMPin2, OUTPUT);
   pinMode(switchpin1, INPUT_PULLUP);
   pinMode(switchpin2, INPUT_PULLUP);
+  analogWriteFreq(15000);
   analogWrite(PWMPin, PWM_SCALE*ch1/100);
   analogWrite(PWMPin2, PWM_SCALE*ch2/100);
   attachInterrupt(digitalPinToInterrupt(switchpin1), button1pressISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(switchpin2), button2pressISR, FALLING);
-
 
   Serial.println("Waiting for connection");
 
@@ -54,6 +54,7 @@ void setup()
  
     // connect to local WiFi
     WiFi.mode(WIFI_STA);
+    WiFi.hostname("your_hostname"); //set hostname
     WiFi.begin(ssid, password);
     // waiting for connection
     while (WiFi.status() != WL_CONNECTED)
@@ -69,8 +70,9 @@ void setup()
     // END connect to local WiFi
  
 //  
-  server.on("/", Ereignis_Index);
+  server.on("/", event_index);
   server.onNotFound ( handleNotFound );
+  //server.on("/favicon.ico", event_index);
 
   server.begin();  			// start server
   Serial.println("HTTP Server started");
@@ -113,6 +115,7 @@ void handleChannel(const char *ch, int *valp, int pin)
   return;
 }
 
+
 void setchannel (int *valp, int pin, int val) {
   *valp = val;
     analogWrite(pin, PWM_SCALE * val / 100);
@@ -147,11 +150,11 @@ void  button2pressISR() {
   button2 = 1;
 }
 
-void Ereignis_Index()    // executed if "http://<ip address>/" is accessed
+void event_index()    // executed if "http://<ip address>/" is accessed
 {
   // send index.html, if there are no request args
   if (0 == server.args()) {
-    Serial.println("Sende Index.html");
+    Serial.println("Sending Index.html");
     server.send(200, "text/html", indexHTML);
     return;
   }
@@ -159,6 +162,18 @@ void Ereignis_Index()    // executed if "http://<ip address>/" is accessed
   // else ...
   handleChannel("ch1", &ch1, PWMPin);
   handleChannel("ch2", &ch2, PWMPin2);
+
+  if (server.arg("f")!="") { 
+  const char *arg = server.arg("f").c_str();
+  int val = atoi(arg);
+  // c++11: int val = stoi(server.arg(ch));
+  if (500 <= val && val <= 19000) {
+    Serial.println("PWM Frequency " +  String(val));
+   analogWriteFreq(val);
+   analogWrite(PWMPin, PWM_SCALE * ch1 / 100);
+   analogWrite(PWMPin2, PWM_SCALE * ch2 / 100);
+  }
+  }
   
   // output state
   char response[200];
